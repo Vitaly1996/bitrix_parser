@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Данные по заявкам</title>
+    <link rel="stylesheet" href="{% static 'style_logs.css' %}">
+    <script src="https://polyfill.io/v3/polyfill.min.js?version=3.52.1&features=fetch"></script>
+</head>
+<body>
+	<div class="container">
+		<h1>Данные по заявкам</h1>
+		<div class="log-content">
+			{{ log_content }}
+            <a href="/" class="btn-home">На главную</a>
+		</div>
+	</div>
+</body>
+</html>

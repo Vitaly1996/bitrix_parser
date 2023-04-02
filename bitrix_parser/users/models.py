@@ -7,7 +7,7 @@ class User(AbstractUser):
     email = models.EmailField(
         verbose_name='email address', unique=True)
     uuid = models.PositiveIntegerField(verbose_name='Uuid', default=0)
-    date_activation = models.DateField(
+    period_activation = models.DateField(
         verbose_name='period_activationи',
         help_text='Note:You are 4 hours ahead of server time',
         null=True, blank=True)

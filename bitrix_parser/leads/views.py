@@ -5,15 +5,21 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 from django.conf import settings
 from django.shortcuts import redirect
 import time
 import random
 import json
+import logging
+import os
+import sys
 
 username = settings.LOGIN
-password1 = settings.PASSWORD
+password = settings.PASSWORD
+
 url = "https://mp24.bitrix24.ru/marketplace/app/10/"
+executable_path =r"C:\A_programming\Dev\workshop\bitrix_parser\chromedriver.exe"
 
 
 class IndexPageView(TemplateView):
@@ -43,7 +49,7 @@ def update_settings(request):
                  'interval-end': data['interval_end'],
                  'stop-word': data['stop_word']}
 
-    return redirect(request, 'index', {'form_data': form_data})
+    return render(request, 'index.html', {'form_data': form_data})
 
 
 def update_leads(request, *args):
@@ -52,75 +58,60 @@ def update_leads(request, *args):
         interval_end = request.POST.get('interval-end')
         stop_word = request.POST.get('stop-word')
 
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome(executable_path=executable_path)
     try:
         driver.get(url)
         time.sleep(1)
+
+
         # Ввод логина
         username_field = driver.find_element(By.ID, "login")
         username_field.clear()
         username_field.send_keys(username)
         time.sleep(3)
-        # Нажимаем кнопку "войти"
+
         login_button = driver.find_element(By.CLASS_NAME, "b24-network-auth-form-btn")
         login_button.click()
         time.sleep(2)
-        #
-        # # # Ожидаем загрузку страницы
-        # WebDriverWait(driver, 10).until(EC.presence_of_element_located(
-        #     (By.ID, "password")))
-        #
-        #
-        #
+        logging.info('Введен логин пользователем: %s', request.user.email)
+
+
         # Вводим пароль
         password_field = driver.find_element(By.ID, "password")
-        password_field.send_keys(password1)
+        password_field.send_keys(password)
         time.sleep(2)
-        # Нажимаем кнопку "войти"
+
         password_button = driver.find_element(By.CLASS_NAME, "b24-network-auth-form-btn")
         password_button.click()
-        time.sleep(20)
+        time.sleep(25)
+        logging.info('Введен пароль пользователем: %s', request.user.email)
 
-        # Вводим в фильтр Bitrix24
-        iframe = driver.find_element(By.CSS_SELECTOR,
-                                     'iframe[name="partner_application"]' )
+        #когда зашли на главную страницу
 
+        table = driver.find_element(By.ID, "workarea")
 
-        driver.switch_to.frame(iframe)
+        div2 = driver.find_element(By.ID, "workarea-content")
 
-        time.sleep(20)
+        div3 = driver.find_element(By.CLASS_NAME, "workarea-content-paddings")
 
-        filter_bitrix = driver.find_element(By.XPATH,
-                                            "//div[contains(@class,'b24-statistic-table-head-btn')]")
-        for element in filter_bitrix:
-            if "Битрикс24" in element.text:
-                element.click()
-                break
-        time.sleep(10)
-        #
-        # filter_and_search = driver.find_element(By.ID, "b24_partner_application_filter_search")
-        # filter_and_search.click()
-        #
-        # choice_item = driver.find_element(By.CLASS_NAME, 'main-ui-control main-ui-select')
-        # choice_item.click()
-        #
-        # bitrix_button = driver.find_element(By.XPATH,
-        #                                     "//div[@data-value='{\"NAME\":\"Битрикс24\",\"VALUE\":\"B24\"}']")
-        # bitrix_button.click()
-        #
-        # # Ожидаем загрузку страницы
-        # WebDriverWait(driver, 10).until(EC.presence_of_element_located(
-        #     (By.CLASS_NAME, "main-ui-item-icon.main-ui-search")))
-        #
-        # while True:
-        #     # Запускаем фильтр обновления заявок
-        #     search_leads = driver.find_element(By.CLASS_NAME,
-        #                                        "main-ui-item-icon.main-ui-search")
-        # interval = random.randint(interval_start, interval_end)
-        #     search_leads.click()
-        #
-        #     # Ожидаем период времени
-        #     time.sleep(interval)
+        ActionChains(driver).move_to_element(div3).perform()
+        driver.implicitly_wait(10)
+        div3.click()
+
+        filer = driver.find_element(By.CLASS_NAME, "main-ui-filter-search")
+        ActionChains(driver).move_to_element(filer).perform()
+        driver.implicitly_wait(10)
+        filer.click()
+
+        while True:
+            # Запускаем фильтр обновления заявок
+            search_leads = driver.find_element(By.CLASS_NAME,
+                                               "main-ui-item-icon.main-ui-search")
+            interval = random.randint(interval_start, interval_end)
+            search_leads.click()
+
+            # Ожидаем период времени
+            time.sleep(interval)
 
     except Exception as ex:
         print(ex)
@@ -132,8 +123,10 @@ def update_leads(request, *args):
     return redirect('index')
 
 
-
-
+def logs(request):
+    with open('output.log', 'r') as log_file:
+        log_content = log_file.read()
+    return render(request, 'logs.html', {'log_content': log_content})
 
 
 

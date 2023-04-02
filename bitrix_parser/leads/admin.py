@@ -9,7 +9,7 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ('email',
                     'password',
                     'uuid',
-                    'date_activation',
+                    'period_activation',
                     'activation_status_verbose',)
     list_filter = ('status_activation',)
 

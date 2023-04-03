@@ -1,19 +1,15 @@
-from django.shortcuts import render
-from django.views.generic import TemplateView
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
-from django.conf import settings
-from django.shortcuts import redirect
-import time
-import random
 import json
 import logging
-import os
-import sys
+import random
+import time
+
+from bs4 import BeautifulSoup
+from django.conf import settings
+from django.shortcuts import redirect, render
+from django.views.generic import TemplateView
+from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
 
 username = settings.LOGIN
 password = settings.PASSWORD
@@ -32,7 +28,9 @@ def update_settings(request):
         with open('settings.json', 'r') as f:
             data = json.load(f)
     except FileNotFoundError:
-        data = {'interval_start': None, 'interval_end': None, 'stop_word': None}
+        data = {'interval_start': None,
+                'interval_end': None,
+                'stop_word': None}
 
     if request.method == 'POST':
         # Обновление данных из формы
@@ -45,24 +43,27 @@ def update_settings(request):
             json.dump(data, f)
 
     # Заполнение формы значениями из файла
-    form_data = {'interval-start': data['interval_start'],
-                 'interval-end': data['interval_end'],
-                 'stop-word': data['stop_word']}
+    form_data = {'interval_start': data['interval_start'],
+                 'interval_end': data['interval_end'],
+                 'stop_word': data['stop_word']}
 
-    return render(request, 'index.html', {'form_data': form_data})
+    return form_data
 
 
-def update_leads(request, *args):
+def update_leads(request):
     if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'save_settings':
+            form_data = update_settings(request)
+            return render(request, 'index.html', {'form_data': form_data})
         interval_start = request.POST.get('interval-start')
         interval_end = request.POST.get('interval-end')
         stop_word = request.POST.get('stop-word')
 
-    driver = webdriver.Chrome(executable_path=executable_path)
+    driver = webdriver.Chrome()
     try:
         driver.get(url)
         time.sleep(1)
-
 
         # Ввод логина
         username_field = driver.find_element(By.ID, "login")
@@ -70,47 +71,58 @@ def update_leads(request, *args):
         username_field.send_keys(username)
         time.sleep(3)
 
-        login_button = driver.find_element(By.CLASS_NAME, "b24-network-auth-form-btn")
+        login_button = driver.find_element(By.CLASS_NAME,
+                                           "b24-network-auth-form-btn")
         login_button.click()
         time.sleep(2)
         logging.info('Введен логин пользователем: %s', request.user.email)
 
 
-        # Вводим пароль
+        # Ввод пароля
         password_field = driver.find_element(By.ID, "password")
         password_field.send_keys(password)
         time.sleep(2)
 
-        password_button = driver.find_element(By.CLASS_NAME, "b24-network-auth-form-btn")
+        password_button = driver.find_element(By.CLASS_NAME,
+                                              "b24-network-auth-form-btn")
         password_button.click()
-        time.sleep(25)
+        time.sleep(10)
         logging.info('Введен пароль пользователем: %s', request.user.email)
 
-        #когда зашли на главную страницу
 
-        table = driver.find_element(By.ID, "workarea")
-
-        div2 = driver.find_element(By.ID, "workarea-content")
-
+        #нажатие на кнопку "скрыть"
         div3 = driver.find_element(By.CLASS_NAME, "workarea-content-paddings")
-
         ActionChains(driver).move_to_element(div3).perform()
         driver.implicitly_wait(10)
         div3.click()
 
-        filer = driver.find_element(By.CLASS_NAME, "main-ui-filter-search")
-        ActionChains(driver).move_to_element(filer).perform()
+
+        #Нажатие на кнопку фильтр
+        filter = driver.find_element(By.CLASS_NAME,
+                    "b24-statistic-table-head-list-item")
+        ActionChains(driver).move_to_element(filter).perform()
         driver.implicitly_wait(10)
-        filer.click()
+        filter.click()
 
         while True:
-            # Запускаем фильтр обновления заявок
-            search_leads = driver.find_element(By.CLASS_NAME,
-                                               "main-ui-item-icon.main-ui-search")
+            # Запускаем обновления заявок с периодничность указанной
+            # указанной в переменной интервал
+            search_leads = driver.find_element(By.ID,
+                        "b24_partner_application_filter_search_container")
             interval = random.randint(interval_start, interval_end)
             search_leads.click()
+            logging.info('Заявки обновлены')
 
-            # Ожидаем период времени
+            should_take_lead = analyze_lead_text(driver, stop_word)
+
+            if should_take_lead:
+                # Нажимаем на кнопку "взять в работу"
+                take_lead_button = driver.find_element(By.CLASS_NAME,
+                                "")
+                take_lead_button.click()
+                logging.info('Заявка взята в работу пользователем %s',
+                             request.user.email)
+
             time.sleep(interval)
 
     except Exception as ex:
@@ -128,6 +140,15 @@ def logs(request):
         log_content = log_file.read()
     return render(request, 'logs.html', {'log_content': log_content})
 
+
+def analyze_lead_text(driver, stop_word):
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    lead_text = soup.find('span', {'class':
+    'partner-application-b24-list-description-inner js-description-inner'}).text.lower()
+    if stop_word not in lead_text:
+        return True # Взять в работу
+    else:
+        return False # Не брать заявку в работу
 
 
 

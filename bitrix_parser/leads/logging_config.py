@@ -1,5 +1,6 @@
 import logging
 import os
+
 from django.conf import settings
 
 
@@ -15,5 +16,6 @@ def setup_logging():
         ],
     )
     logging.getLogger().setLevel(logging.INFO)
+
 
 setup_logging()

@@ -54,10 +54,7 @@ button {
   cursor: pointer;
   font-size: 16px;
   padding: 10px 20px;
-}
-
-.btn-run {
-  margin-right: 10px;
+  width: 240px;
 }
 
 .btn-data {
@@ -104,21 +101,22 @@ h1 {
     white-space: pre-wrap;
 }
 
-.btn-home {
-			display: block;
-			margin-top: 30px;
-			color: #fff;
-			text-decoration: none;
-		}
-
 .btn-home:hover {
 			text-decoration: underline;
 }
 
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
 .btn-settings {
+  width: 200px;
   background-color: #a72727;
   border: none;
-  border-radius: 3px;
   color: #fff;
   cursor: pointer;
   font-size: 16px;

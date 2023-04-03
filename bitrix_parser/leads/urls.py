@@ -1,7 +1,6 @@
 from django.urls import path
-
-from leads.views import update_leads, update_settings, IndexPageView, logs
 from leads.logging_config import setup_logging
+from leads.views import IndexPageView, logs, update_leads, update_settings
 
 setup_logging()
 

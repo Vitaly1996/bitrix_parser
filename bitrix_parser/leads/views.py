@@ -3,6 +3,7 @@ import logging
 import random
 import time
 import threading
+import pymorphy2
 
 from bs4 import BeautifulSoup
 from django.conf import settings
@@ -26,7 +27,7 @@ class IndexPageView(TemplateView):
 def update_settings(request):
     # Загрузка данных из файла
     try:
-        with open('settings.json', 'r') as f:
+        with open('settings.json',  'r', encoding='utf-8') as f:
             data = json.load(f)
     except FileNotFoundError:
         data = {'interval_start': None,
@@ -40,7 +41,7 @@ def update_settings(request):
         data['stop_word'] = request.POST.get('stop-word')
 
         # Сохранение данных в файл
-        with open('settings.json', 'w') as f:
+        with open('settings.json', 'w', encoding='utf-8') as f:
             json.dump(data, f)
 
     # Заполнение формы значениями из файла
@@ -52,14 +53,17 @@ def update_settings(request):
 
 
 def analyze_new_leads(driver, stop_words):
+    morph = pymorphy2.MorphAnalyzer()
+
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     lead = soup.find('tr', {'class': 'main-grid-row main-grid-row-body'})
     if not lead:
         return 'No leads found.'
     lead_text = lead.find('span', {
         'class': 'partner-application-b24-list-description-inner js-description-inner'}).text.lower()
-    for word in stop_words:
-        if word in lead_text:
+    for word in lead_text.split():
+        parsed_word = morph.parse(word)[0]
+        if parsed_word.normal_form in stop_words:
             return True
     return False
 
@@ -73,6 +77,7 @@ def update_leads(request):
         interval_start = int(request.POST.get('interval-start'))
         interval_end = int(request.POST.get('interval-end'))
         stop_word = request.POST.get('stop-word')
+        stop_word_list = [word.strip() for word in stop_word.split('\r\n') if word.strip()]
 
     # options
     options = webdriver.FirefoxOptions()
@@ -154,12 +159,12 @@ def update_leads(request):
         # # driver.implicitly_wait(10)
         # filter.click()
 
-        # def background_thread():
-        #     while True:
-        #         analyze_new_leads(driver, stop_word)
-        #         time.sleep(60)
-        #
-        # threading.Thread(target=background_thread, daemon=True).start()
+        def background_thread():
+            while True:
+                analyze_new_leads(driver, stop_word_list)
+                time.sleep(60)
+
+        threading.Thread(target=background_thread, daemon=True).start()
 
         while True:
             # Запускаем обновления заявок с периодничность указанной

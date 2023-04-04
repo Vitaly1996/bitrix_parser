@@ -2,6 +2,7 @@ import json
 import logging
 import random
 import time
+import threading
 
 from bs4 import BeautifulSoup
 from django.conf import settings
@@ -50,15 +51,28 @@ def update_settings(request):
     return form_data
 
 
+def analyze_new_leads(driver, stop_words):
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    lead = soup.find('tr', {'class': 'main-grid-row main-grid-row-body'})
+    if not lead:
+        return 'No leads found.'
+    lead_text = lead.find('span', {
+        'class': 'partner-application-b24-list-description-inner js-description-inner'}).text.lower()
+    for word in stop_words:
+        if word in lead_text:
+            return True
+    return False
+
+
 def update_leads(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'save_settings':
             form_data = update_settings(request)
             return render(request, 'index.html', {'form_data': form_data})
-        interval_start = request.POST.get('interval_start')
-        interval_end = request.POST.get('interval_end')
-        stop_word = request.POST.get('stop_word')
+        interval_start = int(request.POST.get('interval-start'))
+        interval_end = int(request.POST.get('interval-end'))
+        stop_word = request.POST.get('stop-word')
 
     # options
     options = webdriver.FirefoxOptions()
@@ -76,6 +90,7 @@ def update_leads(request):
     options=options)
 
     try:
+        actions = ActionChains(driver)
         driver.get(url)
         time.sleep(1)
 
@@ -111,6 +126,14 @@ def update_leads(request):
 
         iframe = driver.find_element(By.CLASS_NAME, 'partner-application-install-select-country-iframe')
         driver.switch_to.frame(iframe)
+        #
+        # filter = driver.find_element(By.CLASS_NAME,
+        #                              'partner-application-b24-statistic-table-head-list-item')
+
+        btn = driver.find_element(By.ID, 'b24_partner_application_filter_search')
+        btn.click()
+        time.sleep(2)
+        logging.info('Кнопка нажата')
 
         # filter = driver.find_element(By.XPATH,
         #             "//span[@class='main-ui-item-icon main-ui-search']")
@@ -118,30 +141,23 @@ def update_leads(request):
         # # driver.implicitly_wait(10)
         # filter.click()
 
+        # def background_thread():
+        #     while True:
+        #         analyze_new_leads(driver, stop_word)
+        #         time.sleep(60)
+        #
+        # threading.Thread(target=background_thread, daemon=True).start()
+
         while True:
             # Запускаем обновления заявок с периодничность указанной
             # указанной в переменной интервал
             # bt24 = driver.find_element(By.CLASS_NAME,
             # "b24-statistic-table-head-btn-selected")
             # bt24.click()
-            time.sleep(3)
-
-            search_leads = driver.find_element(By.ID,
-                        "b24_partner_application_filter_search_container")
+            interval = random.randint(interval_start, interval_end)
+            search_leads = driver.find_element(By.CLASS_NAME, "main-ui-search")
             search_leads.click()
             logging.info('Заявки обновлены')
-            interval = random.randint(interval_start, interval_end)
-
-
-            should_take_lead = analyze_lead_text(driver, stop_word)
-
-            if should_take_lead:
-                # Нажимаем на кнопку "взять в работу"
-                take_lead_button = driver.find_element(By.CLASS_NAME,
-                                "")
-                take_lead_button.click()
-                logging.info('Заявка взята в работу пользователем %s',
-                             request.user.email)
 
             time.sleep(interval)
 

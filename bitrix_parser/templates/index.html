@@ -17,15 +17,15 @@
         <div class="form-group" >
           <label for="interval-start">Интервал перезагрузки (Сек.)</label>
           <input type="number" id="interval-start" name="interval-start" required
-                 value="{{ interval_start }}">
+                 value="{{ form_data.interval_start }}">
         </div>
         <div class="form-group">
           <input type="number" id="interval-end" name="interval-end" required
-          value="{{ interval_end }}">
+          value="{{ form_data.interval_end }}">
         </div>
         <div class="form-group">
           <label for="stop-word">Стоп слова</label>
-           <textarea id="stop-word" name="stop-word">{{ stop_word }}</textarea>
+           <textarea id="stop-word" name="stop-word">{{ form_data.stop_word }}</textarea>
         </div>
           <div class="btn-group">
             <button type="submit"  onclick="document.getElementsByName('action')[0].value = 'run'">Запустить</button>

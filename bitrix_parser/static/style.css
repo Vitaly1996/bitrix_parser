@@ -31,7 +31,8 @@ label {
 }
 
 input[type="number"],
-input[type="text"] {
+input[type="text"],
+input[type='password'] {
   background-color: #555;
   border: none;
   border-radius: 3px;
@@ -42,7 +43,8 @@ input[type="text"] {
 }
 
 input[type="number"]:focus,
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type='password'] {
   outline: none;
 }
 

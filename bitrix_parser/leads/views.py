@@ -14,8 +14,8 @@ from selenium.webdriver.common.by import By
 username = settings.LOGIN
 password = settings.PASSWORD
 
-url = "https://mp24.bitrix24.ru/marketplace/app/10/"
-executable_path =r"C:\A_programming\Dev\workshop\bitrix_parser\chromedriver.exe"
+url = "https://mp24.bitrix24.ru/marketplace/app/10/?any=10%2F&current_fieldset=SOCSERV"
+# executable_path =r"C:\A_programming\Dev\workshop\bitrix_parser\chromedriver.exe"
 
 
 class IndexPageView(TemplateView):
@@ -56,11 +56,25 @@ def update_leads(request):
         if action == 'save_settings':
             form_data = update_settings(request)
             return render(request, 'index.html', {'form_data': form_data})
-        interval_start = request.POST.get('interval-start')
-        interval_end = request.POST.get('interval-end')
-        stop_word = request.POST.get('stop-word')
+        interval_start = request.POST.get('interval_start')
+        interval_end = request.POST.get('interval_end')
+        stop_word = request.POST.get('stop_word')
 
-    driver = webdriver.Chrome()
+    # options
+    options = webdriver.FirefoxOptions()
+
+    # user-agent
+    options.set_preference("general.useragent.override",
+                           "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0")
+
+    # disable webdriver mode
+    options.set_preference("dom.webdriver.enabled", False)
+
+    driver = webdriver.Firefox(
+        executable_path=
+    r'C:\A_programming\Dev\workshop\bitrix_parser\geckodriver.exe',
+    options=options)
+
     try:
         driver.get(url)
         time.sleep(1)
@@ -90,28 +104,34 @@ def update_leads(request):
         logging.info('Введен пароль пользователем: %s', request.user.email)
 
 
-        #нажатие на кнопку "скрыть"
-        div3 = driver.find_element(By.CLASS_NAME, "workarea-content-paddings")
-        ActionChains(driver).move_to_element(div3).perform()
-        driver.implicitly_wait(10)
-        div3.click()
-
-
         #Нажатие на кнопку фильтр
-        filter = driver.find_element(By.CLASS_NAME,
-                    "b24-statistic-table-head-list-item")
-        ActionChains(driver).move_to_element(filter).perform()
-        driver.implicitly_wait(10)
-        filter.click()
+
+        element = driver.find_element(By.CLASS_NAME, 'app-frame')
+        driver.switch_to.frame(element)
+
+        iframe = driver.find_element(By.CLASS_NAME, 'partner-application-install-select-country-iframe')
+        driver.switch_to.frame(iframe)
+
+        # filter = driver.find_element(By.XPATH,
+        #             "//span[@class='main-ui-item-icon main-ui-search']")
+        # # ActionChains(driver).move_to_element(filter).perform()
+        # # driver.implicitly_wait(10)
+        # filter.click()
 
         while True:
             # Запускаем обновления заявок с периодничность указанной
             # указанной в переменной интервал
+            # bt24 = driver.find_element(By.CLASS_NAME,
+            # "b24-statistic-table-head-btn-selected")
+            # bt24.click()
+            time.sleep(3)
+
             search_leads = driver.find_element(By.ID,
                         "b24_partner_application_filter_search_container")
-            interval = random.randint(interval_start, interval_end)
             search_leads.click()
             logging.info('Заявки обновлены')
+            interval = random.randint(interval_start, interval_end)
+
 
             should_take_lead = analyze_lead_text(driver, stop_word)
 

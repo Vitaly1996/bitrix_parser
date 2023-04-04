@@ -126,13 +126,26 @@ def update_leads(request):
 
         iframe = driver.find_element(By.CLASS_NAME, 'partner-application-install-select-country-iframe')
         driver.switch_to.frame(iframe)
-        #
-        # filter = driver.find_element(By.CLASS_NAME,
-        #                              'partner-application-b24-statistic-table-head-list-item')
+
+        filter = driver.find_element(By.CLASS_NAME,
+                                     'partner-application-b24-item-b24')
+        filter.click()
 
         btn = driver.find_element(By.ID, 'b24_partner_application_filter_search')
-        btn.click()
+        btn.send_keys('Битрикс24')
         time.sleep(2)
+
+        # btn = driver.find_element(By.CLASS_NAME, 'main-ui-select-name')
+        # btn.click()
+        # time.sleep(2)
+        #
+        # btn_b24 = driver.find_element(By.CLASS_NAME, "main-ui-checked")
+        # btn_b24.click()
+        # time.sleep(2)
+
+        # search = driver.find_element(By.CLASS_NAME, "ui-btn ui-btn-primary ui-btn-icon-search main-ui-filter-field-button main-ui-filter-find")
+        # search.click()
+
         logging.info('Кнопка нажата')
 
         # filter = driver.find_element(By.XPATH,

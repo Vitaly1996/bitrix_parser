@@ -9,13 +9,17 @@ def setup_logging():
         '%(asctime)s - %(message)s'
     )
     log_file = os.path.join(settings.BASE_DIR, 'output.log')
-    logging.basicConfig(
-        format=log_format,
-        handlers=[
-            logging.FileHandler(log_file, 'w'),
-        ],
-    )
-    logging.getLogger().setLevel(logging.INFO)
+
+    file_handler = logging.FileHandler(log_file, 'w')
+    file_handler.setFormatter(logging.Formatter(log_format))
+
+    info_filter = logging.Filter()
+    info_filter.filter = lambda record: record.levelno == logging.INFO
+    file_handler.addFilter(info_filter)
+
+    logger = logging.getLogger()
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.INFO)
 
 
 setup_logging()

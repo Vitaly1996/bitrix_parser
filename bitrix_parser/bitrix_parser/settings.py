@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-
+from dotenv import load_dotenv
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,6 +24,9 @@ SECRET_KEY = '2%b@10@5nb81_6y9)^lgz8$w81zd*5(7mql9ze#gfa_=f_x2%t'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+env_path = './.env'
+load_dotenv(dotenv_path=env_path)
 
 ALLOWED_HOSTS = []
 
@@ -124,7 +127,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 
-PASSWORD = '1qazxcde32WSX'
-LOGIN = 'anoxinconsult@mail.ru'
+PASSWORD = os.getenv('PASSWORD')
+LOGIN = os.getenv('LOGIN')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

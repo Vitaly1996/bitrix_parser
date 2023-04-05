@@ -136,8 +136,8 @@ def update_leads(request):
                                      'partner-application-b24-item-b24')
         filter.click()
 
-        btn = driver.find_element(By.ID, 'b24_partner_application_filter_search')
-        btn.send_keys('Битрикс24')
+        # btn = driver.find_element(By.ID, 'b24_partner_application_filter_search')
+        # btn.send_keys('Битрикс24')
         time.sleep(2)
 
         # btn = driver.find_element(By.CLASS_NAME, 'main-ui-select-name')
@@ -162,7 +162,14 @@ def update_leads(request):
         def background_thread():
             while True:
                 analyze_new_leads(driver, stop_word_list)
-                time.sleep(60)
+
+                if analyze_new_leads:
+                    # Нажимаем на кнопку "взять в работу"
+                    take_lead_button = driver.find_element(By.CLASS_NAME,
+                                                           "partner-application-b24-list-rules-list-item-link")
+                    take_lead_button.click()
+                    logging.info('Заявка взята в работу')
+                    time.sleep(60)
 
         threading.Thread(target=background_thread, daemon=True).start()
 

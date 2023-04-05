@@ -21,8 +21,19 @@
 ```sh
 git clone github.com/Vitaly1996/bitrix_parser
 ```
-- создать и активировать виртуальное окружение для проекта
 
+- в директории bitrix_parser/bitrix_parser/ создаем файл .env и записываем в него следующие переменные окружения:
+```commandline
+  PASSWORD=<ваш_пароль>    
+  LOGIN=<ваш_логин>  
+  ```
+- в файле bitrix_parser/bitrix_parser/leads/config.py при необходимости меняем переменные, связанные с настройкой браузера:
+```commandline
+executable_path=<путь до драйвера вашего_браузера>
+user_agent=<меняем user_agent>
+```
+
+- создать и активировать виртуальное окружение для проекта
 ```commandline
 python -m venv venv
 source venv/scripts/activate (Windows)    

@@ -54,19 +54,37 @@ def update_settings(request):
     return form_data
 
 
-def analyze_new_leads(driver, stop_words):
+def analyze_new_leads(driver, stop_words, analyzed_leads):
     morph = pymorphy2.MorphAnalyzer()
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     lead = soup.find('tr', {'class': 'main-grid-row main-grid-row-body'})
     if not lead:
         return 'No leads found.'
+
+    lead_id = lead.get('data-id')
+    if lead_id in analyzed_leads:
+        # Заявка уже анализирована, пропускаем ее
+        return False
+
     lead_text = lead.find('span', {
         'class': 'partner-application-b24-list-description-inner js-description-inner'}).text.lower()
     for word in lead_text.split():
         parsed_word = morph.parse(word)[0]
         if parsed_word.normal_form in stop_words:
-            return True
+            logging.info('Заявка содержит стоп-сллово и не может быть взята в работу')
+
+    take_lead_button = lead.find('span', {
+        'class': 'js-partner-submit-application'})
+    if take_lead_button:
+        driver.execute_script("arguments[0].click();", take_lead_button)
+        logging.info('Заявка взята в работу')
+
+    logging.info('Данную заявку нельзя взять в работу')
+
+    # Добавляем заявку в список анализированных заявок
+    analyzed_leads[lead_id] = True
+
     return False
 
 
@@ -141,22 +159,17 @@ def update_leads(request):
 
         def background_thread():
             while True:
-                analyze_new_leads(driver, stop_word_list)
+                analyze_new_leads(driver, stop_word_list, analyzed_leads)
+                time.sleep(interval)
 
-                if analyze_new_leads:
-                    # Нажимаем на кнопку "взять в работу"
-                    take_lead_button = driver.find_element(By.CLASS_NAME,
-                        "partner-application-b24-list-rules-list-item-link")
-                    take_lead_button.click()
-                    logging.info('Заявка взята в работу')
-                    time.sleep(60)
-
+        analyzed_leads = {}
         threading.Thread(target=background_thread, daemon=True).start()
 
         #Запускаем нажатие на кнопку обновления заявок с рандомным числом
         #из заданного интервала
         while True:
-            interval = random.randint(interval_start, interval_end)
+            interval = random.randint(interval_start,
+                                      interval_end)
             search_leads = driver.find_element(By.CLASS_NAME, "main-ui-search")
             search_leads.click()
             logging.info('Заявки обновлены')
@@ -178,14 +191,3 @@ def logs(request):
     with open('output.log', 'r') as log_file:
         log_content = log_file.read()
     return render(request, 'logs.html', {'log_content': log_content})
-
-
-def analyze_lead_text(driver, stop_word):
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    lead_text = soup.find('span', {'class':
-    'partner-application-b24-list-description-inner js-description-inner'}
-                          ).text.lower()
-    if stop_word not in lead_text:
-        return True # Взять в работу
-    else:
-        return False # Не брать заявку в работу

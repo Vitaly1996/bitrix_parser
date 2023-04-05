@@ -18,7 +18,7 @@ def setup_logging():
     file_handler.addFilter(info_filter)
 
     logger = logging.getLogger()
-    logger.addHandler(file_handler)
+    logging.getLogger().addHandler(file_handler)
     logger.setLevel(logging.INFO)
 
 
